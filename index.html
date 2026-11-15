@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d2433">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>الأب الغني — ميزانيتي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d2433;--mute:#6b7280;--line:#e7e3da;--gold:#b8860b;--green:#15803d;--red:#b91c1c;--blue:#1d4ed8;--soft:#faf8f3}
+@media (prefers-color-scheme:dark){:root{--bg:#14161b;--card:#1d2027;--ink:#eceae4;--mute:#9aa1ad;--line:#2d313a;--gold:#e0b341;--green:#4ade80;--red:#f87171;--blue:#7aa2ff;--soft:#22252d}}
+*{box-sizing:border-box}
+body{margin:0;font-family:Cairo,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+header{padding:20px 16px 8px;max-width:760px;margin:auto}
+h1{margin:0;font-size:22px;font-weight:800}
+h1 span{color:var(--gold)}
+.sub{color:var(--mute);font-size:13px;margin-top:2px}
+main{max-width:760px;margin:auto;padding:8px 16px 90px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:6px;overflow-x:auto;padding:10px 16px;max-width:760px;margin:auto;scrollbar-width:none}
+nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+nav button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--soft);border-radius:12px;padding:12px}
+.stat .l{font-size:12px;color:var(--mute)}
+.stat .v{font-size:20px;font-weight:800;direction:ltr;text-align:right}
+.pos{color:var(--green)}.neg{color:var(--red)}
+h2{font-size:16px;margin:0 0 10px}
+.bar{height:14px;background:var(--soft);border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--green));border-radius:999px;transition:width .5s}
+.big{font-size:34px;font-weight:800;margin:4px 0}
+.tip{font-size:14px;padding:10px 12px;border-radius:10px;background:var(--soft);margin-top:8px;border-inline-start:4px solid var(--gold)}
+.row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .n{flex:1}
+.row .n small{display:block;color:var(--mute);font-size:12px}
+.row .a{font-weight:700;direction:ltr}
+.x{border:0;background:none;color:var(--mute);font-size:18px;cursor:pointer;padding:4px 8px}
+form{display:grid;gap:8px;margin-top:10px}
+input,select{font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--ink);width:100%}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:11px;background:var(--ink);color:var(--bg);cursor:pointer}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+.flow{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.flow div{display:flex;justify-content:space-between;padding:6px 10px;border-radius:8px;background:var(--soft)}
+.flow b{direction:ltr}
+.empty{color:var(--mute);font-size:14px;text-align:center;padding:14px}
+.lesson{font-size:14px;color:var(--mute);margin:0 0 6px}
+.hidden{display:none}
+.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal .card{max-width:360px;width:100%}
+input[type=range]{padding:0;accent-color:var(--gold)}
+</style>
+</head>
+<body>
+<header>
+  <h1>ميزانية <span>الأب الغني</span></h1>
+  <div class="sub">الأصل يضع المال في جيبك، والالتزام يأخذه منه.</div>
+</header>
+<nav id="tabs">
+  <button data-t="dash" class="on">اللوحة</button>
+  <button data-t="income">الدخل</button>
+  <button data-t="expense">المصاريف</button>
+  <button data-t="asset">الأصول</button>
+  <button data-t="liab">الالتزامات</button>
+  <button data-t="plan">خطة الادخار</button>
+</nav>
+<main>
+  <!-- DASHBOARD -->
+  <section id="v-dash">
+    <div class="card">
+      <h2>الخروج من سباق الفئران</h2>
+      <p class="lesson">تتحرر مالياً عندما يغطي الدخل السلبي (دخل الأصول) كل مصاريفك الشهرية.</p>
+      <div class="big" id="freePct">0%</div>
+      <div class="bar"><i id="freeBar" style="width:0"></i></div>
+      <div class="tip" id="freeTip"></div>
+    </div>
+    <div class="grid">
+      <div class="stat"><div class="l">الدخل الشهري</div><div class="v" id="sInc">0</div></div>
+      <div class="stat"><div class="l">المصاريف + الأقساط</div><div class="v" id="sExp">0</div></div>
+      <div class="stat"><div class="l">التدفق النقدي الشهري</div><div class="v" id="sFlow">0</div></div>
+      <div class="stat"><div class="l">صافي الثروة</div><div class="v" id="sNet">0</div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h2>بيان التدفق النقدي</h2>
+      <div class="flow" id="flowList"></div>
+    </div>
+    <div class="card">
+      <h2>نصيحة اليوم</h2>
+      <div class="tip" id="adv" style="margin:0"></div>
+    </div>
+  </section>
+
+  <!-- INCOME -->
+  <section id="v-income" class="hidden">
+    <div class="card">
+      <h2>الدخل الشهري</h2>
+      <p class="lesson">الدخل النشط تحصل عليه مقابل عملك (راتب، أرباح عمل تشغّله بنفسك). الدخل السلبي يأتي من أصولك ويُدخَل في تبويب الأصول.</p>
+      <div id="l-income"></div>
+      <form data-k="income">
+        <input name="name" placeholder="مثال: الراتب" required>
+        <input name="amt" type="number" step="any" min="0" placeholder="المبلغ الشهري €" required>
+        <button class="btn">+ إضافة دخل</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- EXPENSE -->
+  <section id="v-expense" class="hidden">
+    <div class="card">
+      <h2>المصاريف الشهرية</h2>
+      <p class="lesson">إيجار، طعام، مواصلات، تأمين... أقساط الديون تُسجَّل في تبويب الالتزامات.</p>
+      <div id="l-expense"></div>
+      <form data-k="expense">
+        <input name="name" placeholder="مثال: الطعام" required>
+        <input name="amt" type="number" step="any" min="0" placeholder="المبلغ الشهري €" required>
+        <button class="btn">+ إضافة مصروف</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ASSETS -->
+  <section id="v-asset" class="hidden">
+    <div class="card">
+      <h2>الأصول</h2>
+      <p class="lesson">عقار مؤجَّر، مشروع يعمل بدونك، أسهم وأرباحها، حقوق ملكية... اكتب قيمته والدخل الذي يجلبه كل شهر.</p>
+      <div id="l-asset"></div>
+      <form data-k="asset">
+        <input name="name" placeholder="مثال: شقة مؤجرة" required>
+        <div class="f2">
+          <input name="val" type="number" step="any" min="0" placeholder="القيمة €" required>
+          <input name="amt" type="number" step="any" min="0" placeholder="دخل شهري €" value="">
+        </div>
+        <button class="btn">+ إضافة أصل</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- LIABILITIES -->
+  <section id="v-liab" class="hidden">
+    <div class="card">
+      <h2>الالتزامات</h2>
+      <p class="lesson">قروض، تقسيط سيارة، بطاقة ائتمان، رهن عقاري... اكتب المبلغ المتبقي والقسط الشهري.</p>
+      <div id="l-liab"></div>
+      <form data-k="liab">
+        <input name="name" placeholder="مثال: قرض السيارة" required>
+        <div class="f2">
+          <input name="val" type="number" step="any" min="0" placeholder="المتبقي €" required>
+          <input name="amt" type="number" step="any" min="0" placeholder="قسط شهري €">
+        </div>
+        <button class="btn">+ إضافة التزام</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section id="v-plan" class="hidden">
+    <div class="card">
+      <h2>ادفع لنفسك أولاً</h2>
+      <p class="lesson">خصّص نسبة من دخلك لشراء الأصول قبل أي مصروف آخر.</p>
+      <label>النسبة: <b id="pctL">10%</b></label>
+      <input type="range" id="pct" min="5" max="50" step="1" value="10">
+      <div class="grid" style="margin-top:12px">
+        <div class="stat"><div class="l">ادّخر شهرياً</div><div class="v" id="pAmt">0</div></div>
+        <div class="stat"><div class="l">في السنة</div><div class="v" id="pYear">0</div></div>
+      </div>
+      <div class="tip" id="pTip"></div>
+    </div>
+    <div class="card">
+      <h2>كم أصلاً تحتاج للحرية؟</h2>
+      <label>العائد السنوي المتوقع للأصول: <b id="yL">5%</b></label>
+      <input type="range" id="yld" min="2" max="12" step="0.5" value="5">
+      <div class="grid" style="margin-top:12px">
+        <div class="stat"><div class="l">الأصول المطلوبة</div><div class="v" id="need">0</div></div>
+        <div class="stat"><div class="l">سنوات تقريبية</div><div class="v" id="yrs">—</div></div>
+      </div>
+      <div class="tip">الحساب تقريبي: يفترض أن مصاريفك ثابتة وأنك تعيد استثمار كل ما تدّخره بنفس العائد، ولا يحسب التضخم أو الضرائب.</div>
+    </div>
+    <div class="card">
+      <h2>بياناتك</h2>
+      <p class="lesson">البيانات محفوظة على هذا الجهاز فقط. صدّرها كنسخة احتياطية أو لنقلها لجهاز آخر.</p>
+      <div class="f2" style="margin-bottom:8px">
+        <button class="btn" id="exp">تصدير نسخة احتياطية</button>
+        <button class="btn ghost" id="impBtn">استيراد نسخة</button>
+      </div>
+      <input type="file" id="imp" accept=".json,application/json" class="hidden">
+      <div class="tip hidden" id="msg"></div>
+      <button class="btn ghost" id="reset" style="width:100%;margin-top:8px">مسح كل البيانات والبدء من جديد</button>
+    </div>
+  </section>
+</main>
+
+<div class="modal hidden" id="confirm">
+  <div class="card">
+    <h2>مسح كل البيانات؟</h2>
+    <p class="lesson">سيتم حذف كل ما أدخلته من هذا الجهاز.</p>
+    <div class="f2"><button class="btn ghost" id="no">إلغاء</button><button class="btn" id="yes" style="background:var(--red)">مسح</button></div>
+  </div>
+</div>
+
+<script>
+const KEY='richdad-v1';
+const sample={income:[{name:'الراتب',amt:2200},{name:'أرباح المشروع',amt:800}],expense:[{name:'الإيجار',amt:900},{name:'الطعام',amt:450},{name:'المواصلات',amt:150},{name:'تأمينات واشتراكات',amt:200}],asset:[{name:'حساب استثمار (ETF)',val:6000,amt:20}],liab:[{name:'قرض سيارة',val:8000,amt:250}],pct:10,yld:5};
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.income)S=JSON.parse(JSON.stringify(sample));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const fmt=n=>(n<0?'-':'')+'€ '+Math.round(Math.abs(n)).toLocaleString('de-DE');
+const sum=(a,k='amt')=>a.reduce((s,x)=>s+(+x[k]||0),0);
+const $=id=>document.getElementById(id);
+
+function calc(){
+  const active=sum(S.income),passive=sum(S.asset),exp=sum(S.expense),pay=sum(S.liab);
+  const totalExp=exp+pay,inc=active+passive,flow=inc-totalExp;
+  const net=sum(S.asset,'val')-sum(S.liab,'val');
+  return {active,passive,exp,pay,totalExp,inc,flow,net};
+}
+function render(){
+  const c=calc();
+  const free=c.totalExp>0?Math.min(100,c.passive/c.totalExp*100):(c.passive>0?100:0);
+  $('freePct').textContent=Math.round(free)+'%';
+  $('freeBar').style.width=free+'%';
+  $('freeTip').textContent=free>=100?'مبروك! دخلك السلبي يغطي كل مصاريفك. أنت خارج سباق الفئران.':
+    `دخلك السلبي ${fmt(c.passive)} يغطي ${Math.round(free)}% من مصاريفك. ينقصك ${fmt(c.totalExp-c.passive)} شهرياً من دخل الأصول.`;
+  $('sInc').textContent=fmt(c.inc);
+  $('sExp').textContent=fmt(c.totalExp);
+  $('sFlow').textContent=fmt(c.flow);$('sFlow').className='v '+(c.flow>=0?'pos':'neg');
+  $('sNet').textContent=fmt(c.net);$('sNet').className='v '+(c.net>=0?'pos':'neg');
+  $('flowList').innerHTML=[['دخل نشط (من عملك)',c.active,'pos'],['دخل سلبي (من أصولك)',c.passive,'pos'],['مصاريف المعيشة',-c.exp,'neg'],['أقساط الالتزامات',-c.pay,'neg'],['= الصافي الشهري',c.flow,c.flow>=0?'pos':'neg']]
+    .map(([l,v,k])=>`<div><span>${l}</span><b class="${k}">${fmt(v)}</b></div>`).join('');
+  // advice
+  let a;
+  if(c.inc===0)a='ابدأ بإدخال دخلك ومصاريفك. لا يمكنك إدارة ما لا تقيسه.';
+  else if(c.flow<0)a='مصاريفك أكبر من دخلك. هذه أول مشكلة يجب حلها: قلّل الالتزامات الاستهلاكية قبل أي استثمار.';
+  else if(c.pay>c.inc*0.3)a='أقساط ديونك تأكل أكثر من 30% من دخلك. ركّز على سداد الديون ذات الفائدة العالية أولاً.';
+  else if(c.passive<c.active*0.1)a='معظم دخلك من عملك. وجّه فائض التدفق النقدي ('+fmt(c.flow)+') لشراء أول أصل يدرّ دخلاً.';
+  else a='أنت على الطريق الصحيح. استمر في تحويل الدخل النشط إلى أصول، ولا تشترِ الكماليات إلا من دخل الأصول.';
+  $('adv').textContent=a;
+  // lists
+  const lists={income:x=>`<small>دخل نشط</small>`,expense:x=>'',asset:x=>`<small>القيمة ${fmt(x.val)} · يدرّ ${fmt(x.amt||0)}/شهر</small>`,liab:x=>`<small>المتبقي ${fmt(x.val)} · قسط ${fmt(x.amt||0)}/شهر</small>`};
+  for(const k in lists){
+    $('l-'+k).innerHTML=S[k].length?S[k].map((x,i)=>`<div class="row"><div class="n">${esc(x.name)}${lists[k](x)}</div><div class="a ${k==='income'||k==='asset'?'pos':'neg'}">${fmt(k==='asset'||k==='liab'?(x.amt||0):x.amt)}</div><button class="x" data-k="${k}" data-i="${i}" aria-label="حذف">×</button></div>`).join(''):'<div class="empty">لا يوجد شيء بعد</div>';
+  }
+  // plan
+  const p=S.pct||10,y=S.yld||5;
+  $('pct').value=p;$('pctL').textContent=p+'%';$('yld').value=y;$('yL').textContent=y+'%';
+  const save_=c.inc*p/100;
+  $('pAmt').textContent=fmt(save_);$('pYear').textContent=fmt(save_*12);
+  $('pTip').textContent=c.flow<save_?`تدفقك النقدي الحالي (${fmt(c.flow)}) أقل من هذا المبلغ. الأب الغني يقول: ادفع لنفسك أولاً، ثم اضغط على نفسك لتقليل المصاريف أو زيادة الدخل.`:`تدفقك النقدي يكفي. حوّل ${fmt(save_)} أول كل شهر إلى حساب منفصل مخصص للأصول فقط.`;
+  const need=c.totalExp*12/(y/100);
+  $('need').textContent=fmt(need);
+  // years: grow current assets + monthly save at yield until passive yearly >= expenses
+  let A=sum(S.asset,'val'),yrs=0,m=Math.max(save_,0);
+  if(c.totalExp<=0)$('yrs').textContent='0';
+  else if(m<=0&&A*y/100<c.totalExp*12)$('yrs').textContent='—';
+  else{while(A<need&&yrs<80){A=A*(1+y/100)+m*12;yrs++}$('yrs').textContent=yrs>=80?'+80':yrs;}
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',e=>{
+  e.preventDefault();const d=new FormData(f),k=f.dataset.k;
+  const it={name:d.get('name').trim(),amt:+d.get('amt')||0};
+  if(d.has('val'))it.val=+d.get('val')||0;
+  S[k].push(it);f.reset();save();render();
+}));
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.x');if(b){S[b.dataset.k].splice(+b.dataset.i,1);save();render();}
+});
+$('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('main>section').forEach(s=>s.classList.toggle('hidden',s.id!=='v-'+b.dataset.t));
+  window.scrollTo(0,0);
+});
+$('pct').oninput=e=>{S.pct=+e.target.value;save();render()};
+$('yld').oninput=e=>{S.yld=+e.target.value;save();render()};
+$('reset').onclick=()=>$('confirm').classList.remove('hidden');
+$('no').onclick=()=>$('confirm').classList.add('hidden');
+$('yes').onclick=()=>{S={income:[],expense:[],asset:[],liab:[],pct:10,yld:5};save();$('confirm').classList.add('hidden');render();};
+function note(t){const m=$('msg');m.textContent=t;m.classList.remove('hidden');setTimeout(()=>m.classList.add('hidden'),4000)}
+$('exp').onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='rich-dad-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();note('تم تصدير النسخة الاحتياطية.');
+};
+$('impBtn').onclick=()=>$('imp').click();
+$('imp').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);
+    if(!Array.isArray(d.income)||!Array.isArray(d.expense)||!Array.isArray(d.asset)||!Array.isArray(d.liab))throw 0;
+    S=d;save();render();note('تم استيراد البيانات بنجاح.');}catch(x){note('الملف غير صالح.')}
+    e.target.value='';};
+  r.readAsText(f);
+};
+render();
+if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+</script>
+</body>
+</html>
